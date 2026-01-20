@@ -397,6 +397,7 @@
         let pins = [];
         let score = 0;
         let animationId; // מזהה האנימציה
+        let pinsFallenInCurrentThrow = 0; // מעקב אחרי נפילות בזריקה הנוכחית
         
         // משתני הילוך חוזר
         let recordedFrames = [];
@@ -583,10 +584,12 @@
                 if (ballPosition > 290) ballPosition = 290;
                 ball.style.left = ballPosition + 'px';
 
-                // בדיקה אם הכדור הגיע לאזור הפינים
-                if (currentTop < 130) {
-                    // חישוב מרכז הכדור (המיקום + חצי רוחב)
-                    checkCollision(ballPosition + 25);
+                // בדיקת התנגשויות רציפה
+                checkCollision(ballPosition + 25, currentTop + 25);
+
+                // בדיקה אם הכדור יצא מהמסך (סיום זריקה)
+                if (currentTop < -60) {
+                    handleThrowEnd();
                 }
 
                 // אפקט פרספקטיבה וסיבוב (3D)
@@ -713,6 +716,7 @@
             // velocityX חיובי = ימינה, שלילי = שמאלה
             curveAmount = velocityX * 3 * currentOilFactor; 
 
+            pinsFallenInCurrentThrow = 0; // איפוס מונה נפילות
             // איפוס הקלטה
             recordedFrames = [];
             replayBtn.style.display = 'none';
@@ -742,8 +746,8 @@
         });
 
         // בדיקת פגיעה בפינים
-        function checkCollision(ballCenterX) {
-            let pinsFallenThisRound = 0;
+        function checkCollision(ballCenterX, ballCenterY) {
+            let pinsHitFrame = 0;
             let pinsToKnock = [];
             
             // שלב 1: זיהוי פינים שהכדור פגע בהם ישירות
@@ -751,12 +755,15 @@
                 if (pin.fallen) return;
 
                 const pinCenterX = pin.x + 15; // מרכז הפין
-                const distance = Math.abs(ballCenterX - pinCenterX);
+                const pinCenterY = pin.y + 30; // מרכז הפין אנכית
+                
+                const dx = ballCenterX - pinCenterX;
+                const dy = ballCenterY - pinCenterY;
+                const distance = Math.sqrt(dx*dx + dy*dy); // מרחק אוקלידי
 
                 // אם מרכז הכדור קרוב מספיק למרכז הפין
-                if (distance < 32) { 
-                     // הוספת אלמנט של מזל/אקראיות (שלא כל פגיעה תפיל הכל)
-                     // ככל שהפגיעה מרכזית יותר, הסיכוי ליפול עולה
+                if (distance < 40) { 
+                     // סיכוי ליפול תלוי במרחק
                     if (Math.random() > (distance / 50)) { 
                         pinsToKnock.push(pin);
                     }
@@ -776,7 +783,7 @@
                 currentPin.element.style.transform = `rotate(${angle}deg) translate(${Math.random()*10}px, ${Math.random()*10}px)`;
                 currentPin.element.classList.add('fallen');
                 currentPin.fallen = true;
-                pinsFallenThisRound++;
+                pinsHitFrame++;
                 playSound('hit');
                 createSparks(currentPin.x + 15, currentPin.y + 30);
 
@@ -800,11 +807,12 @@
             }
 
             // עדכון ניקוד והודעות
-            score += pinsFallenThisRound;
+            score += pinsHitFrame;
+            pinsFallenInCurrentThrow += pinsHitFrame;
             scoreDisplay.textContent = "ניקוד: " + score;
             
             // Score pop animation
-            if (pinsFallenThisRound > 0) {
+            if (pinsHitFrame > 0) {
                 scoreDisplay.style.transform = "scale(1.3)";
                 // רעידת מסך
                 gameContainer.classList.add('shake');
@@ -812,7 +820,9 @@
                 
                 setTimeout(() => scoreDisplay.style.transform = "scale(1)", 200);
             }
+        }
 
+        function handleThrowEnd() {
             const totalPins = 6;
             const totalFallen = pins.filter(p => p.fallen).length;
 
