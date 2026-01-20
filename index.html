@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>אימון הבאולינג של האלופים!</title>
+    <style>
+        body {
+            /* רקע בסגנון מסיבת ניאון כהה */
+            background: linear-gradient(rgba(26, 0, 51, 0.85), rgba(0, 0, 0, 0.9)),
+                        url('https://images.unsplash.com/photo-1523540737048-2679d0177306?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* מניעת גלילה */
+            touch-action: none; /* ביטול מחוות דפדפן לטובת המשחק */
+            position: fixed; /* קיבוע המסך למניעת גלילה באייפון */
+            width: 100%;
+            height: 100%;
+        }
+        h1 { 
+            color: #ffcc00; 
+            text-shadow: 0 0 15px #ff6600, 2px 2px 4px #000; /* אפקט זוהר */
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+        h2 { 
+            color: #00d2ff; 
+            text-shadow: 0 0 10px #0056b3;
+            margin-top: 0;
+            font-size: 20px;
+        }
+        #game-container {
+            position: relative;
+            width: 340px;
+            height: 500px;
+            /* מסלול עץ ריאליסטי */
+            background: 
+                linear-gradient(90deg, #111 25px, transparent 25px, transparent 315px, #111 315px),
+                linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%),
+                repeating-linear-gradient(90deg, #8b5a2b 0px, #8b5a2b 28px, #5c3a1e 29px, #5c3a1e 30px);
+            border: 4px solid #ffcc00;
+            border-radius: 10px;
+            overflow: hidden;
+            /* הילה זוהרת מסביב למסלול */
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.3), 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .pin {
+            position: absolute;
+            width: 30px;
+            height: 60px;
+            background-color: #f0f0f0;
+            border-radius: 50% 50% 10% 10% / 30% 30% 10% 10%;
+            border: 2px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        .pin::after { /* פס אדום זוהר */
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background-color: red;
+            box-shadow: 0 0 5px red;
+        }
+        .pin.fallen {
+            /* Transform is handled in JS for randomness */
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        .pin.cleared {
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.5s ease-in;
+        }
+        #ball {
+            position: absolute;
+            top: 430px;
+            left: 145px; /* אמצע */
+            width: 50px;
+            height: 50px;
+            /* כדור מבריק */
+            background: radial-gradient(circle at 30% 30%, #00ffff, #0056b3);
+            border-radius: 50%;
+            box-shadow: 0 0 15px #00d2ff, 0 5px 15px rgba(0,0,0,0.4);
+            touch-action: none; /* מונע גלילה במובייל */
+            cursor: grab;
+        }
+        #ball:active {
+            cursor: grabbing;
+        }
+        #controls {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .buttons-row {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
+        }
+        .small-buttons-col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        button {
+            background: linear-gradient(to bottom, #ffcc00, #ffaa00);
+            border: none;
+            color: #222;
+            padding: 15px 40px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 50px;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.5), 0 4px #999;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+            transition: 0.1s;
+             -webkit-tap-highlight-color: transparent;
+        }
+        button:active {
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3), 0 2px #666;
+            transform: translateY(2px);
+        }
+        button:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+            text-shadow: none;
+            transform: none;
+        }
+        #score-display {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 0;
+            color: #ffcc00;
+            text-shadow: 0 0 10px #ff6600;
+            transition: transform 0.2s;
+        }
+        #message {
+            position: absolute;
+            top: 150px;
+            width: 100%;
+            z-index: 30;
+            pointer-events: none;
+            font-weight: bold;
+            color: #ff6666;
+            font-size: 20px;
+            text-shadow: 1px 1px 2px #000;
+            transition: all 0.3s;
+        }
+        .celebration {
+            animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 36px !important;
+            color: #fff !important;
+            text-shadow: 0 0 20px #ff00de, 0 0 40px #ff00de !important;
+            z-index: 10;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+            80% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); }
+        }
+        .motivation {
+            animation: pulse 1.5s infinite;
+            color: #adff2f !important; /* Green-yellow for encouragement */
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        #high-score {
+            font-size: 18px;
+            color: #00ffcc;
+            margin: 0;
+            text-shadow: 0 0 5px #000;
+        }
+        .scores-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            animation: fall linear forwards;
+            z-index: 100;
+        }
+        @keyframes fall {
+            to { transform: translateY(500px) rotate(720deg); opacity: 0; }
+        }
+        .lane-arrow {
+            position: absolute;
+            width: 0; 
+            height: 0; 
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 20px solid rgba(255, 255, 255, 0.3);
+            top: 300px;
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        #power-bar-container {
+            position: absolute;
+            right: 10px;
+            top: 150px;
+            width: 20px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+            z-index: 20;
+        }
+        #power-bar-fill {
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to top, #00ff00, #ffff00, #ff0000);
+            position: absolute;
+            bottom: 0;
+        }
+        .spark {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 20;
+            animation: spark-anim 0.5s linear forwards;
+        }
+        #drag-arrow {
+            position: absolute;
+            width: 0; 
+            height: 0; 
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 60px solid rgba(255, 255, 0, 0.8);
+            transform-origin: bottom center;
+            pointer-events: none;
+            display: none;
+            z-index: 15;
+            filter: drop-shadow(0 0 8px #ff0000);
+        }
+        #reset-score-btn {
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #reset-score-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
+        }
+        #reset-score-btn:active {
+            transform: translateY(1px);
+        }
+        #oil-pattern {
+            font-size: 14px;
+            color: #aaaaff;
+            margin: 5px;
+            text-shadow: 0 0 5px #0000ff;
+            font-weight: bold;
+        }
+        #replay-btn {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #fff;
+            color: #fff;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 0;
+            display: none; /* Hidden initially */
+        }
+        #replay-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        /* התאמה למסכים קטנים */
+        @media (max-height: 700px) {
+            h1 { font-size: 22px; margin-bottom: 2px; }
+            h2 { font-size: 16px; margin-top: 0; margin-bottom: 2px; }
+            #score-display { font-size: 20px; margin: 5px; }
+            #message { font-size: 16px; height: 20px; }
+            #controls { margin-top: 10px; }
+            button { padding: 10px 30px; font-size: 20px; }
+        }
+        .trail-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fadeOut 0.6s linear forwards;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.6);
+        }
+        @keyframes spark-anim {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: scale(0.2); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>💥 אימון יום ההולדת! 💥</h1>
+    <h2>יונתן ב.ז | יונתן ע. | יותם כ.</h2>
+    
+    <div class="scores-row">
+        <div id="high-score">שיא נוכחי: 0</div>
+        <div id="score-display">ניקוד: 0</div>
+    </div>
+
+    <div id="game-container">
+        <div id="message">גררו את הכדור וזרקו!</div>
+        <div id="ball"></div>
+        <div id="drag-arrow"></div>
+    </div>
+
+    <div id="controls">
+        <div id="oil-pattern">תבנית שמן: רגיל</div>
+        <div class="buttons-row">
+            <button id="action-btn">המתן...</button>
+            <div class="small-buttons-col">
+                <button id="reset-score-btn">🗑️ איפוס שיא</button>
+                <button id="replay-btn">🔄 הילוך חוזר</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // משתנים גלובליים
+        const ball = document.getElementById('ball');
+        const gameContainer = document.getElementById('game-container');
+        const dragArrow = document.getElementById('drag-arrow');
+        const actionBtn = document.getElementById('action-btn');
+        const messageDisplay = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score-display');
+        const highScoreDisplay = document.getElementById('high-score');
+        const resetScoreBtn = document.getElementById('reset-score-btn');
+        const oilPatternDisplay = document.getElementById('oil-pattern');
+        const replayBtn = document.getElementById('replay-btn');
+
+        let currentThrow = 1;
+        let ballPosition = 145; // מרכז
+        let ballDirection = 1; // 1 ימינה, -1 שמאלה
+        const ballSpeed = 4; // מהירות תזוזה
+        let ballRollSpeed = 9; // מהירות גלגול אנכית
+        let currentPower = 0;
+        let powerDirection = 3;
+        let curveAmount = 0;
+        let currentOilFactor = 1.0;
+        let gameState = 'aiming'; // מצבי משחק: aiming, setting_power, rolling, finished
+        let pins = [];
+        let score = 0;
+        let animationId; // מזהה האנימציה
+        
+        // משתני הילוך חוזר
+        let recordedFrames = [];
+        let isReplaying = false;
+        let replayIndex = 0;
+        let savedGameState = null; // לשמירת מצב הלוח לפני הריפליי
+
+        // משתני Swipe
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let lastDragX = 0;
+        let lastDragY = 0;
+        let lastDragTime = 0;
+        let velocityX = 0;
+        let velocityY = 0;
+
+        // טעינת שיא
+        let highScore = localStorage.getItem('bowlingHighScore') || 0;
+        highScoreDisplay.textContent = "שיא נוכחי: " + highScore;
+
+        // איפוס שיא
+        resetScoreBtn.addEventListener('click', () => {
+            if (confirm("האם לאפס את השיא?")) {
+                localStorage.removeItem('bowlingHighScore');
+                highScore = 0;
+                highScoreDisplay.textContent = "שיא נוכחי: 0";
+                highScoreDisplay.style.color = "#00ffcc";
+            }
+        });
+
+        // כפתור הילוך חוזר
+        replayBtn.addEventListener('click', () => {
+            startReplay();
+        });
+
+        // --- מערכת סאונד (ללא קבצים חיצוניים) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            const now = audioCtx.currentTime;
+            
+            if (type === 'throw') {
+                // צליל "וווש" יורד
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'hit') {
+                // צליל מכה נמוך
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'win') {
+                // אקורד ניצחון
+                playNote(523.25, now, 0.1); // C5
+                playNote(659.25, now + 0.1, 0.1); // E5
+                playNote(783.99, now + 0.2, 0.4); // G5
+            }
+        }
+        function playNote(freq, time, duration) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.2, time);
+            gain.gain.linearRampToValueAtTime(0, time + duration);
+            osc.start(time);
+            osc.stop(time + duration);
+        }
+
+        // --- הגדרת המשחק ---
+
+        // יצירת הפינים
+        function setupPins() {
+            // ניקוי פינים ישנים
+            pins.forEach(pin => pin.element.remove());
+            pins = [];
+            
+            const startX = 110; // נקודת התחלה אופקית
+            const startY = 50;  // נקודת התחלה אנכית
+            
+            // מערך מיקומים של הפינים (משולש)
+            const pinRows = [
+                [{x:0, y:0}, {x:60, y:0}, {x:120, y:0}], // שורה 1 (אחורית)
+                [{x:30, y:40}, {x:90, y:40}],           // שורה 2
+                [{x:60, y:80}]                          // שורה 3 (קדמית)
+            ];
+
+            // יצירת האלמנטים בפועל
+            pinRows.forEach(row => {
+                row.forEach(pos => {
+                    createPin(startX + pos.x, startY + pos.y);
+                });
+            });
+            
+            // הוספת חצים למסלול (פעם אחת)
+            if (!document.querySelector('.lane-arrow')) {
+                const arrowPositions = [170, 140, 200, 110, 230, 80, 260];
+                arrowPositions.forEach((left, index) => {
+                    if (index > 6) return;
+                    const arrow = document.createElement('div');
+                    arrow.className = 'lane-arrow';
+                    arrow.style.left = (left - 10) + 'px'; // Center adjustment
+                    // סידור בצורת V
+                    arrow.style.top = (300 - Math.abs(170 - left) * 0.5) + 'px';
+                    gameContainer.appendChild(arrow);
+                });
+            }
+        }
+
+        // פונקציית עזר ליצירת פין בודד
+        function createPin(x, y) {
+            const pin = document.createElement('div');
+            pin.className = 'pin';
+            pin.style.left = x + 'px';
+            pin.style.top = y + 'px';
+            gameContainer.appendChild(pin);
+            // שמירת המידע על הפין במערך
+            pins.push({ element: pin, x: x, y: y, fallen: false });
+        }
+
+        // --- מנוע המשחק ---
+
+        // לולאת האנימציה הראשית - רצה כל הזמן
+        function gameLoop() {
+            if (gameState === 'aiming') {
+                // במצב Swipe, הכדור לא זז לבד. המשתמש מזיז אותו.
+                // רק מוודאים גבולות
+                if (ballPosition > 290) ballPosition = 290;
+                if (ballPosition < 0) ballPosition = 0;
+                ball.style.left = ballPosition + 'px';
+
+            } else if (gameState === 'replaying') {
+                // לוגיקת הילוך חוזר
+                if (replayIndex < recordedFrames.length) {
+                    const frame = recordedFrames[replayIndex];
+                    
+                    // שחזור מצב כדור
+                    ball.style.left = frame.ball.left;
+                    ball.style.top = frame.ball.top;
+                    ball.style.transform = frame.ball.transform;
+
+                    // שחזור מצב פינים
+                    frame.pins.forEach((pState, i) => {
+                        if (pins[i]) {
+                            pins[i].element.style.transform = pState.transform;
+                            pins[i].element.className = pState.className;
+                            pins[i].element.style.opacity = pState.opacity;
+                        }
+                    });
+
+                    replayIndex++;
+                } else {
+                    endReplay();
+                }
+
+            } else if (gameState === 'rolling') {
+                // שלב הגלגול: הזזת הכדור למעלה
+                let currentTop = parseInt(ball.style.top);
+                currentTop -= ballRollSpeed; // מהירות הכדור מעלה
+                
+                ball.style.top = currentTop + 'px';
+
+                // החלת עיקול (Curve) בהתאם למהירות וכיוון
+                ballPosition += curveAmount;
+                // גבולות המסלול
+                if (ballPosition < 0) ballPosition = 0;
+                if (ballPosition > 290) ballPosition = 290;
+                ball.style.left = ballPosition + 'px';
+
+                // בדיקה אם הכדור הגיע לאזור הפינים
+                if (currentTop < 130) {
+                    // חישוב מרכז הכדור (המיקום + חצי רוחב)
+                    checkCollision(ballPosition + 25);
+                }
+
+                // אפקט פרספקטיבה וסיבוב (3D)
+                // ככל שהכדור עולה למעלה (top קטן), הוא נהיה קטן יותר
+                let scale = 0.6 + (currentTop / 430) * 0.4; 
+                ball.style.transform = `scale(${scale}) rotate(${(430 - currentTop) * 5}deg)`;
+
+                // אפקט שובל (Trail)
+                createTrail();
+
+                // הקלטת הפריים הנוכחי
+                const frame = {
+                    ball: { left: ball.style.left, top: ball.style.top, transform: ball.style.transform },
+                    pins: pins.map(p => ({
+                        transform: p.element.style.transform,
+                        className: p.element.className,
+                        opacity: p.element.style.opacity
+                    }))
+                };
+                recordedFrames.push(frame);
+            }
+            // בקשה לפריים הבא של האנימציה
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // --- לוגיקת משחק ---
+
+        // --- Swipe Controls ---
+        function startDrag(e) {
+            if (gameState !== 'aiming') return;
+            if (e.cancelable) e.preventDefault(); // מניעת גלילה
+            messageDisplay.style.opacity = '0'; // הסתרת הודעה בגרירה
+            isDragging = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            dragStartX = clientX;
+            dragStartY = clientY;
+            lastDragX = clientX;
+            lastDragY = clientY;
+            lastDragTime = Date.now();
+            velocityX = 0;
+            velocityY = 0;
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault(); // מניעת גלילה במובייל
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // חישוב מהירות
+            const now = Date.now();
+            const dt = now - lastDragTime;
+            if (dt > 0) {
+                velocityX = (clientX - lastDragX) / dt;
+                velocityY = (clientY - lastDragY) / dt;
+            }
+            lastDragX = clientX;
+            lastDragY = clientY;
+            lastDragTime = now;
+
+            // הזזת הכדור אופקית (גרירה)
+            // המרה מקואורדינטות מסך לקואורדינטות משחק
+            const containerRect = gameContainer.getBoundingClientRect();
+            let newLeft = clientX - containerRect.left - 25; // 25 = half ball width
+            ballPosition = newLeft;
+
+            // הזזת הכדור אנכית (כדי שירגיש כמו גרירה אמיתית)
+            let newTop = clientY - containerRect.top - 25;
+            // הגבלת גבולות אנכיים כדי שלא יגררו רחוק מדי
+            if (newTop < 350) newTop = 350; 
+            if (newTop > 450) newTop = 450;
+            ball.style.top = newTop + 'px';
+
+            // עדכון חץ הכיוון
+            const speed = Math.sqrt(velocityX*velocityX + velocityY*velocityY);
+            if (speed > 0.2) {
+                const angle = Math.atan2(velocityY, velocityX);
+                const degrees = angle * (180 / Math.PI) + 90;
+                const scale = Math.min(speed / 3, 2.5); // הגבלת גודל החץ
+                
+                dragArrow.style.display = 'block';
+                dragArrow.style.left = (ballPosition + 25) + 'px';
+                dragArrow.style.top = (newTop + 25) + 'px';
+                dragArrow.style.transform = `translate(-50%, -100%) rotate(${degrees}deg) scaleY(${scale})`;
+            } else {
+                dragArrow.style.display = 'none';
+            }
+        }
+
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            dragArrow.style.display = 'none';
+
+            // זיהוי "פליק" (Swipe) - מהירות אנכית שלילית (למעלה) וחזקה מספיק
+            if (velocityY < -0.3) {
+                throwBall();
+            } else {
+                // אם לא הייתה זריקה חזקה מספיק, החזר את הכדור למקום
+                ball.style.top = '430px';
+            }
+        }
+
+        // הוספת מאזינים לגרירה
+        ball.addEventListener('mousedown', startDrag);
+        ball.addEventListener('touchstart', startDrag, {passive: false});
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag, {passive: false});
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+
+        function throwBall() {
+            gameState = 'rolling';
+            
+            // חישוב כוח ועיקול לפי ה-Swipe
+            // מהירות מקסימלית בערך 15, מינימלית 5
+            let speed = Math.abs(velocityY) * 10;
+            if (speed > 18) speed = 18;
+            if (speed < 6) speed = 6;
+            ballRollSpeed = speed;
+
+            // כיוון ועיקול לפי תנועה אופקית
+            // velocityX חיובי = ימינה, שלילי = שמאלה
+            curveAmount = velocityX * 3 * currentOilFactor; 
+
+            // איפוס הקלטה
+            recordedFrames = [];
+            replayBtn.style.display = 'none';
+            messageDisplay.style.opacity = '1'; // החזרת הודעה (למשל "בהצלחה")
+
+            playSound('throw');
+            messageDisplay.classList.remove('celebration');
+            actionBtn.textContent = "הכדור מתגלגל...";
+            actionBtn.disabled = true;
+            messageDisplay.textContent = "בהצלחה!";
+        }
+
+        function handleAction() {
+            if (gameState === 'finished') {
+                resetGame();
+            }
+        }
+
+        // טיפול בלחיצה על הכפתור
+        actionBtn.addEventListener('click', handleAction);
+
+        // טיפול במקלדת (מקש רווח)
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && !actionBtn.disabled) {
+                handleAction();
+            }
+        });
+
+        // בדיקת פגיעה בפינים
+        function checkCollision(ballCenterX) {
+            let pinsFallenThisRound = 0;
+            let pinsToKnock = [];
+            
+            // שלב 1: זיהוי פינים שהכדור פגע בהם ישירות
+            pins.forEach(pin => {
+                if (pin.fallen) return;
+
+                const pinCenterX = pin.x + 15; // מרכז הפין
+                const distance = Math.abs(ballCenterX - pinCenterX);
+
+                // אם מרכז הכדור קרוב מספיק למרכז הפין
+                if (distance < 32) { 
+                     // הוספת אלמנט של מזל/אקראיות (שלא כל פגיעה תפיל הכל)
+                     // ככל שהפגיעה מרכזית יותר, הסיכוי ליפול עולה
+                    if (Math.random() > (distance / 50)) { 
+                        pinsToKnock.push(pin);
+                    }
+                }
+            });
+
+            // שלב 2: תגובת שרשרת (פינים מפילים פינים)
+            let i = 0;
+            while (i < pinsToKnock.length) {
+                const currentPin = pinsToKnock[i];
+                i++;
+
+                if (currentPin.fallen) continue;
+
+                // הפלת הפין
+                const angle = (Math.random() > 0.5 ? 90 : -90) + (Math.random() * 20 - 10);
+                currentPin.element.style.transform = `rotate(${angle}deg) translate(${Math.random()*10}px, ${Math.random()*10}px)`;
+                currentPin.element.classList.add('fallen');
+                currentPin.fallen = true;
+                pinsFallenThisRound++;
+                playSound('hit');
+                createSparks(currentPin.x + 15, currentPin.y + 30);
+
+                // בדיקה אם הפין הזה מפיל שכנים
+                pins.forEach(neighbor => {
+                    if (neighbor.fallen || pinsToKnock.includes(neighbor)) return;
+
+                    // חישוב מרחק בין הפין שנפל לשכן
+                    const dx = currentPin.x - neighbor.x;
+                    const dy = currentPin.y - neighbor.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    // אם הם קרובים (שכנים), יש סיכוי שהשכן ייפול
+                    if (dist < 70) {
+                        // סיכוי גבוה ליפול אם שכן נפל עליך
+                        if (Math.random() < 0.5) {
+                            pinsToKnock.push(neighbor);
+                        }
+                    }
+                });
+            }
+
+            // עדכון ניקוד והודעות
+            score += pinsFallenThisRound;
+            scoreDisplay.textContent = "ניקוד: " + score;
+            
+            // Score pop animation
+            if (pinsFallenThisRound > 0) {
+                scoreDisplay.style.transform = "scale(1.3)";
+                // רעידת מסך
+                gameContainer.classList.add('shake');
+                setTimeout(() => gameContainer.classList.remove('shake'), 500);
+                
+                setTimeout(() => scoreDisplay.style.transform = "scale(1)", 200);
+            }
+
+            const totalPins = 6;
+            const totalFallen = pins.filter(p => p.fallen).length;
+
+            if (currentThrow === 1 && totalFallen < totalPins) {
+                gameState = 'clearing'; // Stop animation temporarily
+                actionBtn.textContent = "מנקה מסלול...";
+                setTimeout(() => {
+                    // Clear fallen pins
+                    pins.forEach(p => {
+                        if (p.fallen) p.element.classList.add('cleared');
+                    });
+
+                    currentThrow = 2;
+                    gameState = 'aiming';
+                    ball.style.top = '430px';
+                    ballPosition = 145;
+                    ballDirection = 1;
+                    ball.style.left = ballPosition + 'px';
+                    actionBtn.textContent = "זרוק כדור (2)!";
+                    actionBtn.disabled = false;
+                    replayBtn.style.display = 'block'; // הצגת כפתור ריפליי
+                    messageDisplay.textContent = "יש לך עוד הזדמנות!";
+                }, 1500);
+            } else {
+                gameState = 'finished';
+                
+                actionBtn.textContent = "🔄 משחק חדש";
+                actionBtn.disabled = false;
+                replayBtn.style.display = 'block'; // הצגת כפתור ריפליי
+                
+                if (totalFallen === totalPins) {
+                    let bonus = 0;
+                    if (currentThrow === 1) {
+                        bonus = 50;
+                        messageDisplay.textContent = "🔥 STRIKE! (+50) 🔥";
+                    } else {
+                        bonus = 20;
+                        messageDisplay.textContent = "✨ SPARE! (+20) ✨";
+                    }
+                    score += bonus;
+                    scoreDisplay.textContent = "ניקוד: " + score;
+                    messageDisplay.classList.add('celebration');
+                    playSound('win');
+                    if (currentThrow === 1) fireConfetti(); // אפקט קונפטי בסטרייק
+                } else {
+                    const motivations = [
+                        "לא נורא, פעם הבאה! 💪",
+                        "כמעט! תמשיך להתאמן! 🎯",
+                        "משחק טוב! נסה שוב! 🚀",
+                        "היית קרוב! אלופים! 🏆",
+                        "בפעם הבאה סטרייק! 😉"
+                    ];
+                    const randomMsg = motivations[Math.floor(Math.random() * motivations.length)];
+                    messageDisplay.textContent = `ניקוד: ${score}. ${randomMsg}`;
+                    messageDisplay.classList.add('motivation');
+                }
+
+                // בדיקת שיא חדש
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('bowlingHighScore', highScore);
+                    highScoreDisplay.textContent = "🏆 שיא חדש! " + highScore;
+                    highScoreDisplay.style.color = "#ff00de"; // צבע חגיגי
+                }
+            }
+        }
+
+        function startReplay() {
+            if (recordedFrames.length === 0) return;
+            
+            // שמירת מצב נוכחי
+            savedGameState = {
+                gameState: gameState,
+                ball: { left: ball.style.left, top: ball.style.top, transform: ball.style.transform },
+                pins: pins.map(p => ({
+                    transform: p.element.style.transform,
+                    className: p.element.className,
+                    opacity: p.element.style.opacity
+                })),
+                btnText: actionBtn.textContent,
+                btnDisabled: actionBtn.disabled,
+                msg: messageDisplay.textContent
+            };
+
+            gameState = 'replaying';
+            replayIndex = 0;
+            actionBtn.disabled = true;
+            replayBtn.disabled = true;
+            messageDisplay.textContent = "🎬 הילוך חוזר...";
+        }
+
+        function endReplay() {
+            // שחזור מצב
+            if (savedGameState) {
+                gameState = savedGameState.gameState;
+                ball.style.left = savedGameState.ball.left;
+                ball.style.top = savedGameState.ball.top;
+                ball.style.transform = savedGameState.ball.transform;
+                
+                pins.forEach((p, i) => {
+                    const saved = savedGameState.pins[i];
+                    if (saved) {
+                        p.element.style.transform = saved.transform;
+                        p.element.className = saved.className;
+                        p.element.style.opacity = saved.opacity;
+                    }
+                });
+
+                actionBtn.textContent = savedGameState.btnText;
+                actionBtn.disabled = savedGameState.btnDisabled;
+                messageDisplay.textContent = savedGameState.msg;
+            }
+            replayBtn.disabled = false;
+        }
+
+        // איפוס המשחק להתחלה
+        function resetGame() {
+            messageDisplay.classList.remove('celebration');
+            messageDisplay.classList.remove('motivation');
+            messageDisplay.style.opacity = '1';
+            currentThrow = 1;
+            gameState = 'aiming';
+            ball.style.top = '430px';
+            ballPosition = 145;
+            ballDirection = 1;
+            ball.style.transform = 'scale(1) rotate(0deg)'; // איפוס גודל וסיבוב
+            ball.style.left = ballPosition + 'px';
+            setRandomBallColor();
+            setRandomOilPattern();
+            actionBtn.textContent = "גרור וזרוק!";
+            actionBtn.disabled = true; // הכפתור לא פעיל בזמן משחק (רק Swipe)
+            replayBtn.style.display = 'none';
+            messageDisplay.textContent = "גררו את הכדור וזרקו!";
+            score = 0;
+            scoreDisplay.textContent = "ניקוד: 0";
+            highScoreDisplay.style.color = "#00ffcc"; // החזרת צבע שיא לרגיל
+            setupPins(); // יצירה מחדש של הפינים
+        }
+
+        function setRandomBallColor() {
+            const palettes = [
+                { main: '#00ffff', dark: '#0056b3', glow: '#00d2ff' }, // Cyan
+                { main: '#ff4d4d', dark: '#b30000', glow: '#ff0000' }, // Red
+                { main: '#4dff4d', dark: '#00b300', glow: '#00ff00' }, // Green
+                { main: '#d24dff', dark: '#5600b3', glow: '#aa00ff' }, // Purple
+                { main: '#ffaa4d', dark: '#b35900', glow: '#ff8800' }, // Orange
+                { main: '#ff4da6', dark: '#b30059', glow: '#ff0080' }, // Pink
+                { main: '#ffff00', dark: '#b3b300', glow: '#ffff66' }  // Yellow
+            ];
+            const p = palettes[Math.floor(Math.random() * palettes.length)];
+            ball.style.background = `radial-gradient(circle at 30% 30%, ${p.main}, ${p.dark})`;
+            ball.style.boxShadow = `0 0 15px ${p.glow}, 0 5px 15px rgba(0,0,0,0.4)`;
+        }
+
+        function setRandomOilPattern() {
+            const patterns = [
+                { name: 'רגיל (Normal)', factor: 1.0, color: '#aaaaff' },
+                { name: 'יבש (Dry) - הרבה סיבוב', factor: 1.8, color: '#ffaa00' },
+                { name: 'שומני (Oily) - מעט סיבוב', factor: 0.4, color: '#00ffaa' },
+                { name: 'חלקלק (Slippery)', factor: 0.1, color: '#00aaff' }
+            ];
+            const p = patterns[Math.floor(Math.random() * patterns.length)];
+            currentOilFactor = p.factor;
+            oilPatternDisplay.textContent = "תבנית שמן: " + p.name;
+            oilPatternDisplay.style.color = p.color;
+        }
+
+        function createSparks(x, y) {
+            for (let i = 0; i < 8; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'spark';
+                spark.style.left = x + 'px';
+                spark.style.top = y + 'px';
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 20 + Math.random() * 30;
+                spark.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+                spark.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+                spark.style.backgroundColor = ['#ffcc00', '#ffffff', '#ff0000'][Math.floor(Math.random()*3)];
+                gameContainer.appendChild(spark);
+                setTimeout(() => spark.remove(), 500);
+            }
+        }
+
+        function createTrail() {
+            if (Math.random() > 0.4) return; // לא ליצור בכל פריים
+            const dot = document.createElement('div');
+            dot.className = 'trail-dot';
+            // מיקום בתחתית הכדור
+            const left = ballPosition + 25 - 4; 
+            const top = parseInt(ball.style.top) + 40; 
+            dot.style.left = left + 'px';
+            dot.style.top = top + 'px';
+            gameContainer.appendChild(dot);
+            setTimeout(() => dot.remove(), 600);
+        }
+
+        // פונקציית קונפטי
+        function fireConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * window.innerWidth + 'px';
+                confetti.style.top = '-10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                document.body.appendChild(confetti);
+                
+                // מחיקה אחרי שהאנימציה נגמרת
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        // --- הפעלת המשחק ---
+        setupPins();
+        resetGame();
+        // התחלת לולאת האנימציה
+        if (!animationId) {
+            gameLoop();
+        }
+
+    </script>
+</body>
+</html>
