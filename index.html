@@ -581,10 +581,18 @@
             </div>
 
             <div class="setting-group">
-                <label>תצוגת שמן:</label>
+                <label>תצוגת מצב שמן:</label>
                 <select id="setting-oil-display">
                     <option value="hide" selected>מוסתר</option>
                     <option value="show">מוצג</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label>סאונד:</label>
+                <select id="setting-sound">
+                    <option value="on" selected>פעיל</option>
+                    <option value="off">מושתק</option>
                 </select>
             </div>
 
@@ -653,6 +661,7 @@
         const settingDifficulty = document.getElementById('setting-difficulty');
         const settingTheme = document.getElementById('setting-theme');
         const settingOilDisplay = document.getElementById('setting-oil-display');
+        const settingSound = document.getElementById('setting-sound');
         const textureOptions = document.querySelectorAll('.texture-option');
 
         let currentThrow = 1;
@@ -665,6 +674,7 @@
         let curveAmount = 0;
         let currentOilFactor = 1.0;
         let currentDifficulty = 'medium';
+        let isMuted = false;
         let currentBallTexture = 'standard';
         let gameState = 'aiming'; // מצבי משחק: aiming, setting_power, rolling, finished
         let pins = [];
@@ -731,6 +741,10 @@
             }
         });
 
+        settingSound.addEventListener('change', (e) => {
+            isMuted = e.target.value === 'off';
+        });
+
         textureOptions.forEach(opt => {
             opt.addEventListener('click', () => {
                 // Remove selected class from all
@@ -762,6 +776,7 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playSound(type) {
+            if (isMuted) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
