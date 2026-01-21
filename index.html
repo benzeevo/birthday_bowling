@@ -426,6 +426,7 @@
     </div>
 
     <div id="controls">
+        <div id="oil-pattern">תבנית שמן: רגיל</div>
         <div class="buttons-row">
             <button id="action-btn">המתן...</button>
             <div class="small-buttons-col">
@@ -638,6 +639,7 @@
             } else if (gameState === 'rolling') {
                 // שלב הגלגול: הזזת הכדור למעלה
                 let currentTop = parseInt(ball.style.top);
+                if (isNaN(currentTop)) currentTop = 430; // הגנה מפני שגיאות
                 currentTop -= ballRollSpeed; // מהירות הכדור מעלה
                 
                 ball.style.top = currentTop + 'px';
@@ -647,6 +649,7 @@
                 // גבולות המסלול
                 if (ballPosition < 0) ballPosition = 0;
                 if (ballPosition > 290) ballPosition = 290;
+                if (isNaN(ballPosition)) ballPosition = 145; // הגנה מפני שגיאות
                 ball.style.left = ballPosition + 'px';
 
                 // בדיקת התנגשויות רציפה
@@ -688,8 +691,16 @@
             if (e.cancelable) e.preventDefault(); // מניעת גלילה
             messageDisplay.style.opacity = '0'; // הסתרת הודעה בגרירה
             isDragging = true;
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
             dragStartX = clientX;
             dragStartY = clientY;
             lastDragX = clientX;
@@ -702,8 +713,15 @@
         function drag(e) {
             if (!isDragging) return;
             if (e.cancelable) e.preventDefault(); // מניעת גלילה במובייל
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
 
             // חישוב מהירות
             const now = Date.now();
@@ -773,6 +791,7 @@
             // חישוב כוח ועיקול לפי ה-Swipe
             // מהירות מקסימלית בערך 15, מינימלית 5
             let speed = Math.abs(velocityY) * 10;
+            if (isNaN(speed)) speed = 9; // הגנה מפני NaN
             if (speed > 18) speed = 18;
             if (speed < 6) speed = 6;
             ballRollSpeed = speed;
@@ -780,6 +799,7 @@
             // כיוון ועיקול לפי תנועה אופקית
             // velocityX חיובי = ימינה, שלילי = שמאלה
             curveAmount = velocityX * 3 * currentOilFactor; 
+            if (isNaN(curveAmount)) curveAmount = 0; // הגנה מפני NaN
 
             pinsFallenInCurrentThrow = 0; // איפוס מונה נפילות
             // איפוס הקלטה
@@ -812,6 +832,8 @@
 
         // בדיקת פגיעה בפינים
         function checkCollision(ballCenterX, ballCenterY) {
+            if (isNaN(ballCenterX) || isNaN(ballCenterY)) return;
+
             let pinsHitFrame = 0;
             let pinsToKnock = [];
             
@@ -850,7 +872,7 @@
                 currentPin.fallen = true;
                 pinsHitFrame++;
                 playSound('hit');
-                createSparks(currentPin.x + 15, currentPin.y + 30);
+                if (typeof createSparks === 'function') createSparks(currentPin.x + 15, currentPin.y + 30);
 
                 // בדיקה אם הפין הזה מפיל שכנים
                 pins.forEach(neighbor => {
@@ -1051,8 +1073,11 @@
             ];
             const p = patterns[Math.floor(Math.random() * patterns.length)];
             currentOilFactor = p.factor;
-            oilPatternDisplay.textContent = "תבנית שמן: " + p.name;
-            oilPatternDisplay.style.color = p.color;
+            if (oilPatternDisplay) {
+                oilPatternDisplay.textContent = "תבנית שמן: " + p.name;
+                oilPatternDisplay.style.color = p.color;
+            }
+            
         }
 
         function createSparks(x, y) {
