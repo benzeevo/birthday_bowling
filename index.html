@@ -1118,7 +1118,11 @@
             messageDisplay.classList.remove('celebration');
             actionBtn.textContent = "הכדור מתגלגל...";
             actionBtn.disabled = true;
-            messageDisplay.textContent = "בהצלחה!";
+            if (Math.random() < 0.15) {
+                messageDisplay.textContent = "בהצלחה!";
+            } else {
+                messageDisplay.textContent = "";
+            }
         }
 
         function handleAction() {
