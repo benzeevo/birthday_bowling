@@ -364,9 +364,45 @@
             min-width: 25px;
             text-align: center;
         }
+        #overlay-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+        #overlay-message.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        #overlay-text {
+            font-size: 50px;
+            color: #ffcc00;
+            text-shadow: 0 0 20px #ff6600, 0 0 40px #ff0000;
+            text-align: center;
+            animation: pulseText 1s infinite alternate;
+            margin: 20px;
+        }
+        @keyframes pulseText {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
     </style>
 </head>
 <body>
+
+    <div id="overlay-message">
+        <h1 id="overlay-text"></h1>
+    </div>
 
     <div id="countdown">
         <span id="cd-days" class="time-unit">00</span>d :
@@ -426,6 +462,7 @@
         let score = 0;
         let animationId; // מזהה האנימציה
         let pinsFallenInCurrentThrow = 0; // מעקב אחרי נפילות בזריקה הנוכחית
+        let birthdayCelebrated = false; // דגל לחגיגת יום הולדת
         
         // משתני הילוך חוזר
         let recordedFrames = [];
@@ -1054,15 +1091,34 @@
             // תאריך יעד: 20 בפברואר, 15:00 שעון ישראל (UTC+2 בחורף)
             let targetDate = new Date(`${targetYear}-02-20T15:00:00+02:00`);
             
-            // אם התאריך עבר השנה, כוון לשנה הבאה
-            if (now > targetDate) {
-                targetDate = new Date(`${targetYear + 1}-02-20T15:00:00+02:00`);
-            }
+            let diff = targetDate - now;
 
-            const diff = targetDate - now;
-
-            if (diff <= 0) {
-                // הגיע הזמן!
+            // בדיקה אם הגענו לתאריך (או עברנו אותו בטווח של 24 שעות)
+            if (diff < 0) {
+                // אם עברו יותר מ-24 שעות, עוברים לשנה הבאה
+                if (diff < -86400000) {
+                    targetDate = new Date(`${targetYear + 1}-02-20T15:00:00+02:00`);
+                    diff = targetDate - now;
+                    birthdayCelebrated = false; // איפוס לשנה הבאה
+                } else {
+                    // זהו יום ההולדת! (בטווח של 24 שעות)
+                    if (!birthdayCelebrated) {
+                        birthdayCelebrated = true;
+                        showOverlay("🎉 יום הולדת שמח! 🎉");
+                        // הפעלת קונפטי בלולאה
+                        setInterval(fireConfetti, 300);
+                        playSound('win');
+                    }
+                    
+                    // איפוס השעון ל-0
+                    document.getElementById('cd-days').textContent = "00";
+                    document.getElementById('cd-hours').textContent = "00";
+                    document.getElementById('cd-minutes').textContent = "00";
+                    document.getElementById('cd-seconds').textContent = "00";
+                    return;
+                }
+            } else if (diff <= 0) {
+                // רגע האפס בדיוק
                 document.getElementById('cd-days').textContent = "00";
                 document.getElementById('cd-hours').textContent = "00";
                 document.getElementById('cd-minutes').textContent = "00";
@@ -1080,6 +1136,27 @@
             document.getElementById('cd-minutes').textContent = minutes < 10 ? '0' + minutes : minutes;
             document.getElementById('cd-seconds').textContent = seconds < 10 ? '0' + seconds : seconds;
         }
+
+        function showOverlay(text, autoHideDuration = 0) {
+            const overlay = document.getElementById('overlay-message');
+            const txt = document.getElementById('overlay-text');
+            txt.textContent = text;
+            overlay.classList.add('visible');
+            
+            if (autoHideDuration > 0) {
+                setTimeout(() => {
+                    overlay.classList.remove('visible');
+                }, autoHideDuration);
+            }
+        }
+
+        // אנימציית פתיחה
+        window.addEventListener('load', () => {
+            // מציג הודעה רק אם זה לא יום ההולדת כרגע
+            if (!birthdayCelebrated) {
+                showOverlay("⏳ הספירה לאחור החלה! ⏳", 3000);
+            }
+        });
 
         setInterval(updateCountdown, 1000);
         updateCountdown(); // הפעלה ראשונית
