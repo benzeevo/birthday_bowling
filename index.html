@@ -342,9 +342,38 @@
         @keyframes fadeOut {
             to { opacity: 0; transform: scale(0.2); }
         }
+        #countdown {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000;
+            color: #0f0;
+            padding: 8px 15px;
+            border: 3px solid #333;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 5px #0f0;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            display: flex;
+            gap: 5px;
+            z-index: 100;
+            direction: ltr; /* Ensure numbers are LTR */
+        }
+        .time-unit {
+            min-width: 25px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+
+    <div id="countdown">
+        <span id="cd-days" class="time-unit">00</span>d :
+        <span id="cd-hours" class="time-unit">00</span>h :
+        <span id="cd-minutes" class="time-unit">00</span>m :
+        <span id="cd-seconds" class="time-unit">00</span>s
+    </div>
 
     <h1>💥 אימון יום ההולדת! 💥</h1>
     <h2>יונתן ב.ז | יונתן ע. | יותם כ.</h2>
@@ -361,7 +390,6 @@
     </div>
 
     <div id="controls">
-        <div id="oil-pattern">תבנית שמן: רגיל</div>
         <div class="buttons-row">
             <button id="action-btn">המתן...</button>
             <div class="small-buttons-col">
@@ -1018,6 +1046,43 @@
             gameContainer.appendChild(dot);
             setTimeout(() => dot.remove(), 600);
         }
+
+        // --- ספירה לאחור ---
+        function updateCountdown() {
+            const now = new Date();
+            let targetYear = now.getFullYear();
+            // תאריך יעד: 20 בפברואר, 15:00 שעון ישראל (UTC+2 בחורף)
+            let targetDate = new Date(`${targetYear}-02-20T15:00:00+02:00`);
+            
+            // אם התאריך עבר השנה, כוון לשנה הבאה
+            if (now > targetDate) {
+                targetDate = new Date(`${targetYear + 1}-02-20T15:00:00+02:00`);
+            }
+
+            const diff = targetDate - now;
+
+            if (diff <= 0) {
+                // הגיע הזמן!
+                document.getElementById('cd-days').textContent = "00";
+                document.getElementById('cd-hours').textContent = "00";
+                document.getElementById('cd-minutes').textContent = "00";
+                document.getElementById('cd-seconds').textContent = "00";
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('cd-days').textContent = days < 10 ? '0' + days : days;
+            document.getElementById('cd-hours').textContent = hours < 10 ? '0' + hours : hours;
+            document.getElementById('cd-minutes').textContent = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById('cd-seconds').textContent = seconds < 10 ? '0' + seconds : seconds;
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown(); // הפעלה ראשונית
 
         // פונקציית קונפטי
         function fireConfetti() {
