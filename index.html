@@ -110,17 +110,6 @@
             align-items: center;
             gap: 5px;
         }
-        .buttons-row {
-            display: flex;
-            flex-direction: row;
-            gap: 10px;
-            align-items: center;
-        }
-        .small-buttons-col {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
         #settings-btn {
             position: absolute;
             top: 10px;
@@ -151,6 +140,18 @@
             text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
             transition: 0.1s;
              -webkit-tap-highlight-color: transparent;
+        }
+        #action-btn {
+            position: absolute;
+            top: 60%; /* Position over the board */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 60;
+            display: none; /* Hidden by default */
+            min-width: 260px;
+            white-space: nowrap;
+            background: linear-gradient(to bottom, #ffcc00, #ffaa00);
+            border: 2px solid #fff;
         }
         button:active {
             box-shadow: 0 0 10px rgba(255, 204, 0, 0.3), 0 2px #666;
@@ -362,9 +363,9 @@
             #controls { margin-top: 0; }
             button { padding: 8px 20px; font-size: 16px; }
             #game-container {
-                transform: scale(0.75);
+                transform: scale(0.9); /* Increased scale */
                 transform-origin: top center;
-                margin-bottom: -125px; /* פיצוי על הקטנת הגודל */
+                margin-bottom: -50px; /* Adjusted margin */
             }
             #countdown { font-size: 14px; padding: 4px 8px; margin-top: 2px; }
             /* התאמת לוח תוצאות למובייל */
@@ -694,16 +695,12 @@
         <div id="message">גררו את הכדור וזרקו!</div>
         <div id="ball"></div>
         <div id="drag-arrow"></div>
+        <button id="action-btn">המתן...</button>
     </div>
 
     <div id="controls">
         <div id="oil-pattern">תבנית שמן: רגיל</div>
-        <div class="buttons-row">
-            <button id="action-btn">המתן...</button>
-            <div class="small-buttons-col">
-                <button id="replay-btn">🔄 הילוך חוזר</button>
-            </div>
-        </div>
+        <button id="replay-btn">🔄 הילוך חוזר</button>
     </div>
 
     <script>
@@ -1195,8 +1192,9 @@
 
             playSound('throw');
             messageDisplay.classList.remove('celebration');
-            actionBtn.textContent = "הכדור מתגלגל...";
+            // actionBtn.textContent = "הכדור מתגלגל...";
             actionBtn.disabled = true;
+            actionBtn.style.display = 'none';
             if (Math.random() < 0.15) {
                 messageDisplay.textContent = "בהצלחה!";
             } else {
@@ -1312,7 +1310,7 @@
 
             if (currentThrow === 1 && totalFallen < totalPins) {
                 gameState = 'clearing'; // Stop animation temporarily
-                actionBtn.textContent = "מנקה מסלול...";
+                // actionBtn.textContent = "מנקה מסלול...";
                 setTimeout(() => {
                     // Clear fallen pins
                     pins.forEach(p => {
@@ -1327,6 +1325,7 @@
                     ball.style.left = ballPosition + 'px';
                     actionBtn.textContent = "זרוק כדור (2)!";
                     actionBtn.disabled = false;
+                    actionBtn.style.display = 'none';
                     replayBtn.style.display = 'block'; // הצגת כפתור ריפליי
                     messageDisplay.textContent = "יש לך עוד הזדמנות!";
                 }, 1500);
@@ -1335,6 +1334,7 @@
                 
                 actionBtn.textContent = "🔄 משחק חדש";
                 actionBtn.disabled = false;
+                actionBtn.style.display = 'block';
                 replayBtn.style.display = 'block'; // הצגת כפתור ריפליי
                 
                 if (totalFallen === totalPins) {
@@ -1405,7 +1405,7 @@
                 } else {
                     // זריקה שנייה
                     gameState = 'clearing';
-                    actionBtn.textContent = "מנקה מסלול...";
+                    // actionBtn.textContent = "מנקה מסלול...";
                     setTimeout(() => {
                         pins.forEach(p => { if (p.fallen) p.element.classList.add('cleared'); });
                         currentThrow = 2;
@@ -1413,6 +1413,7 @@
                         resetBallPosition();
                         actionBtn.textContent = "זרוק כדור (2)!";
                         actionBtn.disabled = false;
+                        actionBtn.style.display = 'none'; // Ensure hidden for 2nd throw
                     }, 1500);
                     return;
                 }
@@ -1429,6 +1430,7 @@
                 gameState = 'finished';
                 actionBtn.textContent = "שחקן הבא >>";
                 actionBtn.disabled = false;
+                actionBtn.style.display = 'block';
             }
         }
 
@@ -1537,6 +1539,7 @@
                         messageDisplay.textContent = "משחק נגמר! המנצח: " + winner;
                         actionBtn.textContent = "משחק חדש";
                         actionBtn.disabled = false;
+                        actionBtn.style.display = 'block';
                         gameState = 'finished';
                         return; // לא מאפסים לוח, נשארים במסך סיום
                     }
@@ -1558,6 +1561,7 @@
             setRandomOilPattern();
             actionBtn.textContent = "גרור וזרוק!";
             actionBtn.disabled = true; // הכפתור לא פעיל בזמן משחק (רק Swipe)
+            actionBtn.style.display = 'none';
             replayBtn.style.display = 'none';
             messageDisplay.textContent = "גררו את הכדור וזרקו!";
             score = 0;
