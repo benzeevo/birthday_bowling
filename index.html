@@ -353,7 +353,7 @@
             background: rgba(255, 255, 255, 0.2);
         }
         /* התאמה למסכים קטנים */
-        @media (max-height: 700px) {
+        @media (max-height: 850px) {
             h1 { font-size: 18px; margin-bottom: 2px; }
             h2 { font-size: 14px; margin-top: 0; margin-bottom: 2px; }
             #score-display { font-size: 18px; margin: 2px; }
@@ -367,6 +367,12 @@
                 margin-bottom: -125px; /* פיצוי על הקטנת הגודל */
             }
             #countdown { font-size: 14px; padding: 4px 8px; margin-top: 2px; }
+            /* התאמת לוח תוצאות למובייל */
+            #pro-scoreboard { padding: 4px; margin-bottom: 2px; }
+            .pro-header { font-size: 12px; margin-bottom: 2px; }
+            .pro-row { padding: 2px; margin: 1px 0; font-size: 12px; }
+            .pro-score { font-size: 14px; }
+            .pro-details { font-size: 10px; letter-spacing: 1px; }
         }
         .trail-dot {
             position: absolute;
@@ -594,7 +600,7 @@
     <button id="settings-btn">⚙️</button>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="modal">
+    <div id="settings-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close-btn" id="close-settings">&times;</span>
             <h2>⚙️ הגדרות</h2>
@@ -667,7 +673,7 @@
     </div>
 
     <h1>💥 אימון באולינג! 💥</h1>
-    <h2>יונתן ב.ז | יונתן ע. | יותם כ.</h2>
+    <h2>יונתן | יונתן | יותם</h2>
     
     <div class="stats-bar">
         <div id="score-display">ניקוד: 0</div>
