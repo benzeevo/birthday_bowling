@@ -373,6 +373,11 @@
             .pro-row { padding: 2px; margin: 1px 0; font-size: 12px; }
             .pro-score { font-size: 14px; }
             .pro-details { font-size: 10px; letter-spacing: 1px; }
+            /* התאמת מודל הגדרות למובייל */
+            .modal-content { padding: 15px; width: 90%; }
+            .setting-group { margin-bottom: 8px; }
+            .setting-group label { margin-bottom: 2px; }
+            .setting-group select { padding: 5px; height: 30px; }
         }
         .trail-dot {
             position: absolute;
@@ -498,20 +503,9 @@
             text-align: right;
             position: relative;
             box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
-            padding-top: 45px; /* Space for close button */
             max-height: 80vh; /* Ensure it fits on mobile */
             overflow-y: auto; /* Scrollable content */
         }
-        .close-btn {
-            color: #aaa;
-            position: absolute;
-            top: 10px;
-            right: 15px; /* Move to right side to avoid overlap */
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close-btn:hover { color: white; }
         .setting-group { margin-bottom: 15px; }
         .setting-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #ffcc00; }
         .setting-group select { width: 100%; padding: 8px; border-radius: 5px; background: #333; color: white; border: 1px solid #555; }
@@ -602,7 +596,6 @@
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close-btn" id="close-settings">&times;</span>
             <h2>⚙️ הגדרות</h2>
             
             <div class="setting-group">
@@ -660,8 +653,9 @@
                 </div>
             </div>
             
-            <button id="reset-score-btn" style="width: 100%; margin-top: 10px;">🗑️ איפוס שיא</button>
-            <button id="reset-stats-btn" style="width: 100%; margin-top: 10px; background: linear-gradient(45deg, #4444ff, #0000cc);">🗑️ איפוס יהלומים/מטבעות</button>
+            <button id="reset-score-btn" style="width: 100%; margin-top: 5px;">🗑️ איפוס שיא</button>
+            <button id="reset-stats-btn" style="width: 100%; margin-top: 5px; background: linear-gradient(45deg, #4444ff, #0000cc);">🗑️ איפוס יהלומים/מטבעות</button>
+            <button id="close-settings-btn" style="width: 100%; margin-top: 10px; background: linear-gradient(to bottom, #4CAF50, #45a049);">אישור (OK)</button>
         </div>
     </div>
 
@@ -727,7 +721,7 @@
         const replayBtn = document.getElementById('replay-btn');
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
-        const closeSettingsBtn = document.getElementById('close-settings');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
         const settingDifficulty = document.getElementById('setting-difficulty');
         const settingTheme = document.getElementById('setting-theme');
         const settingOilDisplay = document.getElementById('setting-oil-display');
