@@ -439,6 +439,35 @@
             from { transform: scale(1); }
             to { transform: scale(1.1); }
         }
+        #pro-scoreboard {
+            display: none;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #ffcc00;
+            margin-bottom: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .pro-row { display: flex; align-items: center; font-size: 16px; margin: 5px 0; color: #ccc; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 5px; }
+        .pro-row.active { border: 1px solid #ffcc00; background: rgba(255, 204, 0, 0.1); color: #fff; }
+        .pro-name { width: 60px; font-weight: bold; }
+        .pro-details { flex-grow: 1; font-family: monospace; font-size: 14px; letter-spacing: 2px; color: #aaa; text-align: center; }
+        .pro-score { width: 40px; text-align: left; font-weight: bold; font-size: 18px; color: #ffcc00; }
+        .pro-header { text-align: center; font-weight: bold; margin-bottom: 5px; color: #00d2ff; }
+        
+        /* Player 2 Theme Override */
+        body.p2-turn {
+            background: linear-gradient(rgba(60, 0, 0, 0.85), rgba(20, 0, 0, 0.9)),
+                        url('https://images.unsplash.com/photo-1523540737048-2679d0177306?q=80&w=1920&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        body.p2-turn #game-container { border-color: #ff4444; box-shadow: 0 0 30px rgba(255, 68, 68, 0.3), 0 10px 20px rgba(0,0,0,0.5); }
+        body.p2-turn h1 { color: #ff4444; text-shadow: 0 0 15px #ff0000; }
+        body.p2-turn h2 { color: #ff8888; text-shadow: 0 0 10px #aa0000; }
+        }
         /* Modal Styles */
         .modal {
             display: none; 
@@ -566,6 +595,14 @@
             <h2>⚙️ הגדרות</h2>
             
             <div class="setting-group">
+                <label>מצב משחק:</label>
+                <select id="setting-gamemode">
+                    <option value="practice" selected>אימון (רגיל)</option>
+                    <option value="professional">מקצועי (2 שחקנים)</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
                 <label>רמת קושי:</label>
                 <select id="setting-difficulty">
                     <option value="easy">קל</option>
@@ -633,6 +670,20 @@
         <div id="diamonds-display">💎 0</div>
         <div id="high-score">שיא: 0</div>
     </div>
+    
+    <div id="pro-scoreboard">
+        <div class="pro-header">תור: <span id="pro-current-player">שחקן 1</span> | סיבוב: <span id="pro-current-frame">1</span>/10</div>
+        <div class="pro-row" id="pro-p1-row">
+            <div class="pro-name">שחקן 1</div>
+            <div class="pro-details" id="pro-p1-details"></div>
+            <div class="pro-score" id="pro-p1-score">0</div>
+        </div>
+        <div class="pro-row" id="pro-p2-row">
+            <div class="pro-name">שחקן 2</div>
+            <div class="pro-details" id="pro-p2-details"></div>
+            <div class="pro-score" id="pro-p2-score">0</div>
+        </div>
+    </div>
 
     <div id="game-container">
         <div id="message">גררו את הכדור וזרקו!</div>
@@ -670,9 +721,18 @@
         const settingTheme = document.getElementById('setting-theme');
         const settingOilDisplay = document.getElementById('setting-oil-display');
         const settingSound = document.getElementById('setting-sound');
+        const settingGamemode = document.getElementById('setting-gamemode');
         const textureOptions = document.querySelectorAll('.texture-option');
         const diamondsDisplay = document.getElementById('diamonds-display');
         const coinsDisplay = document.getElementById('coins-display');
+        const proScoreboard = document.getElementById('pro-scoreboard');
+        const statsBar = document.querySelector('.stats-bar');
+        const proCurrentPlayerEl = document.getElementById('pro-current-player');
+        const proCurrentFrameEl = document.getElementById('pro-current-frame');
+        const proP1Row = document.getElementById('pro-p1-row');
+        const proP2Row = document.getElementById('pro-p2-row');
+        const proP1Score = document.getElementById('pro-p1-score');
+        const proP2Score = document.getElementById('pro-p2-score');
 
         let currentThrow = 1;
         let ballPosition = 145; // מרכז
@@ -694,6 +754,15 @@
         let birthdayCelebrated = false; // דגל לחגיגת יום הולדת
         let diamonds = 0;
         let coins = 0;
+        
+        // משתני מצב מקצועי
+        let gameMode = 'practice'; // 'practice', 'professional'
+        let proState = {
+            players: [{ name: 'שחקן 1', rolls: [], score: 0 }, { name: 'שחקן 2', rolls: [], score: 0 }],
+            currentPlayer: 0,
+            frame: 1,
+            gameOver: false
+        };
         
         // משתני הילוך חוזר
         let recordedFrames = [];
@@ -744,6 +813,11 @@
             if (e.target === settingsModal) {
                 settingsModal.style.display = 'none';
             }
+        });
+
+        settingGamemode.addEventListener('change', (e) => {
+            gameMode = e.target.value;
+            resetGame(true); // Full reset
         });
 
         settingDifficulty.addEventListener('change', (e) => {
@@ -1224,6 +1298,12 @@
         function handleThrowEnd() {
             const totalPins = 6;
             const totalFallen = pins.filter(p => p.fallen).length;
+            
+            // עדכון לוגיקה למצב מקצועי
+            if (gameMode === 'professional') {
+                handleProThrow(totalFallen);
+                return;
+            }
 
             if (currentThrow === 1 && totalFallen < totalPins) {
                 gameState = 'clearing'; // Stop animation temporarily
@@ -1294,6 +1374,79 @@
             }
         }
 
+        function handleProThrow(totalFallen) {
+            const player = proState.players[proState.currentPlayer];
+            
+            // חישוב פינים שנפלו בזריקה הנוכחית
+            let pinsHit = pinsFallenInCurrentThrow;
+            
+            // שמירת הזריקה
+            player.rolls.push(pinsHit);
+            
+            // חישוב ניקוד
+            player.score = calculateScore(player.rolls);
+            updateProScoreboard();
+
+            // בדיקת סיום תור
+            let turnOver = false;
+            
+            // לוגיקה פשוטה ל-10 פריימים
+            if (currentThrow === 1) {
+                if (totalFallen === 6) { // Strike
+                    messageDisplay.textContent = "🔥 STRIKE! 🔥";
+                    playSound('win');
+                    fireConfetti();
+                    turnOver = true;
+                } else {
+                    // זריקה שנייה
+                    gameState = 'clearing';
+                    actionBtn.textContent = "מנקה מסלול...";
+                    setTimeout(() => {
+                        pins.forEach(p => { if (p.fallen) p.element.classList.add('cleared'); });
+                        currentThrow = 2;
+                        gameState = 'aiming';
+                        resetBallPosition();
+                        actionBtn.textContent = "זרוק כדור (2)!";
+                        actionBtn.disabled = false;
+                    }, 1500);
+                    return;
+                }
+            } else {
+                // זריקה 2 הסתיימה
+                if (totalFallen === 6) {
+                    messageDisplay.textContent = "✨ SPARE! ✨";
+                    playSound('win');
+                }
+                turnOver = true;
+            }
+
+            if (turnOver) {
+                gameState = 'finished';
+                actionBtn.textContent = "שחקן הבא >>";
+                actionBtn.disabled = false;
+            }
+        }
+
+        function calculateScore(rolls) {
+            let score = 0;
+            let rollIndex = 0;
+            for (let frame = 0; frame < 10; frame++) {
+                if (rollIndex >= rolls.length) break;
+                
+                if (rolls[rollIndex] === 6) { // Strike
+                    score += 6 + (rolls[rollIndex+1] || 0) + (rolls[rollIndex+2] || 0);
+                    rollIndex++;
+                } else if ((rolls[rollIndex] + (rolls[rollIndex+1] || 0)) === 6) { // Spare
+                    score += 6 + (rolls[rollIndex+2] || 0);
+                    rollIndex += 2;
+                } else { // Open
+                    score += rolls[rollIndex] + (rolls[rollIndex+1] || 0);
+                    rollIndex += 2;
+                }
+            }
+            return score;
+        }
+
         function startReplay() {
             if (recordedFrames.length === 0) return;
             
@@ -1343,10 +1496,52 @@
         }
 
         // איפוס המשחק להתחלה
-        function resetGame() {
+        function resetGame(fullReset = false) {
             messageDisplay.classList.remove('celebration');
             messageDisplay.classList.remove('motivation');
             messageDisplay.style.opacity = '1';
+            
+            if (gameMode === 'professional') {
+                statsBar.style.display = 'none';
+                proScoreboard.style.display = 'block';
+                
+                if (fullReset) {
+                    proState = {
+                        players: [{ name: 'שחקן 1', rolls: [], score: 0 }, { name: 'שחקן 2', rolls: [], score: 0 }],
+                        currentPlayer: 0,
+                        frame: 1,
+                        gameOver: false
+                    };
+                } else {
+                    // מעבר תור
+                    if (proState.gameOver) {
+                        resetGame(true);
+                        return;
+                    }
+                    
+                    proState.currentPlayer = (proState.currentPlayer + 1) % 2;
+                    if (proState.currentPlayer === 0) {
+                        proState.frame++;
+                    }
+                    
+                    if (proState.frame > 10) {
+                        proState.gameOver = true;
+                        let p1 = proState.players[0];
+                        let p2 = proState.players[1];
+                        let winner = p1.score > p2.score ? p1.name : (p2.score > p1.score ? p2.name : "תיקו");
+                        messageDisplay.textContent = "משחק נגמר! המנצח: " + winner;
+                        actionBtn.textContent = "משחק חדש";
+                        actionBtn.disabled = false;
+                        gameState = 'finished';
+                        return; // לא מאפסים לוח, נשארים במסך סיום
+                    }
+                }
+                updateProScoreboard();
+            } else {
+                statsBar.style.display = 'flex';
+                proScoreboard.style.display = 'none';
+            }
+
             currentThrow = 1;
             gameState = 'aiming';
             ball.style.top = '430px';
@@ -1365,6 +1560,65 @@
             highScoreDisplay.textContent = "שיא: " + highScore;
             highScoreDisplay.style.color = "#00ffcc"; // החזרת צבע שיא לרגיל
             setupPins(); // יצירה מחדש של הפינים
+        }
+
+        function resetBallPosition() {
+            ball.style.top = '430px';
+            ballPosition = 145;
+            ballDirection = 1;
+            ball.style.transform = 'scale(1) rotate(0deg)';
+            ball.style.left = ballPosition + 'px';
+        }
+
+        function formatFrames(rolls) {
+            let output = "";
+            let rollIndex = 0;
+            for (let f = 0; f < 10; f++) {
+                if (rollIndex >= rolls.length) break;
+                
+                let r1 = rolls[rollIndex];
+                let s1 = r1 === 0 ? '-' : r1;
+                
+                if (r1 === 6) { // Strike (6 pins total)
+                    output += "X ";
+                    rollIndex++;
+                } else {
+                    let r2 = rolls[rollIndex + 1];
+                    if (r2 === undefined) {
+                        output += s1;
+                        break;
+                    }
+                    let s2 = r2 === 0 ? '-' : r2;
+                    
+                    if (r1 + r2 === 6) { // Spare
+                        output += s1 + "/ ";
+                    } else {
+                        output += s1 + "" + s2 + " ";
+                    }
+                    rollIndex += 2;
+                }
+            }
+            return output;
+        }
+
+        function updateProScoreboard() {
+            proCurrentPlayerEl.textContent = proState.players[proState.currentPlayer].name;
+            proCurrentFrameEl.textContent = proState.frame;
+            proP1Score.textContent = proState.players[0].score;
+            proP2Score.textContent = proState.players[1].score;
+            
+            proP1Row.className = 'pro-row ' + (proState.currentPlayer === 0 ? 'active' : '');
+            proP2Row.className = 'pro-row ' + (proState.currentPlayer === 1 ? 'active' : '');
+            
+            document.getElementById('pro-p1-details').textContent = formatFrames(proState.players[0].rolls);
+            document.getElementById('pro-p2-details').textContent = formatFrames(proState.players[1].rolls);
+
+            // Update Theme based on player
+            if (proState.currentPlayer === 1) {
+                document.body.classList.add('p2-turn');
+            } else {
+                document.body.classList.remove('p2-turn');
+            }
         }
 
         function applyBallTexture() {
