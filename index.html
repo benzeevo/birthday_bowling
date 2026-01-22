@@ -492,10 +492,15 @@
             text-align: right;
             position: relative;
             box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+            padding-top: 45px; /* Space for close button */
+            max-height: 80vh; /* Ensure it fits on mobile */
+            overflow-y: auto; /* Scrollable content */
         }
         .close-btn {
             color: #aaa;
-            float: left;
+            position: absolute;
+            top: 10px;
+            right: 15px; /* Move to right side to avoid overlap */
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
@@ -1762,14 +1767,6 @@
                 }, autoHideDuration);
             }
         }
-
-        // אנימציית פתיחה
-        window.addEventListener('load', () => {
-            // מציג הודעה רק אם זה לא יום ההולדת כרגע
-            if (!birthdayCelebrated) {
-                showOverlay("⏳20.2.2026 ⏳", 3000);
-            }
-        });
 
         setInterval(updateCountdown, 1000);
         updateCountdown(); // הפעלה ראשונית
